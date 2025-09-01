@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Phone Packages</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #3d235a;
+            background-image: radial-gradient(circle at 10% 10%, #4c2a6f, transparent),
+                              radial-gradient(circle at 80% 90%, #58307e, transparent);
+        }
+        .main-gradient {
+            background-image: linear-gradient(to right, #d834ff, #5f00ff);
+        }
+        .cart-slide {
+            transition: transform 0.3s ease-in-out;
+        }
+        .product-card-inner, button:not(.add-to-cart-btn) {
+            transition: all 0.3s ease-in-out;
+        }
+        /* Make card square */
+        .product-card-inner {
+            aspect-ratio: 1 / 1;
+        }
+
+        /* Smooth button gradient transition */
+        .add-to-cart-btn {
+            position: relative;
+            overflow: hidden;
+            z-index: 1;
+            transition: transform 0.2s ease-in-out;
+        }
+        .add-to-cart-btn::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-image: linear-gradient(to right, #4ade80, #2dd4bf);
+            opacity: 0;
+            transition: opacity 0.4s ease-in-out;
+            z-index: -1;
+        }
+        .add-to-cart-btn.is-in-cart::before {
+            opacity: 1;
+        }
+
+        /* Page load animation */
+        .product-card {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.5s ease-out, transform 0.5s ease-out;
+        }
+        .product-card.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        
+        /* Hover effect for product cards (desktop) */
+        @media (hover: hover) {
+            .product-card-inner:hover {
+                transform: scale(1.03);
+                box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            }
+        }
+
+
+        /* Button press effect */
+        button:active, .add-to-cart-btn:active {
+            transform: scale(0.97);
+        }
+        
+        /* Modal Animation */
+        .modal-container {
+            transition: opacity 0.3s ease-in-out;
+        }
+        .modal-content {
+             animation: zoomIn 0.3s ease-out forwards;
+        }
+        @keyframes zoomIn {
+            from {
+                opacity: 0;
+                transform: scale(0.9);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+        
+        /* Cart Item Animation */
+        .cart-item-anim {
+            animation: slideIn 0.4s ease-out forwards;
+        }
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        /* Animated Checkmark */
+        .checkmark-container {
+            width: 100px;
+            height: 100px;
+            margin: 0 auto;
+        }
+        .checkmark {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            display: block;
+            stroke-width: 4;
+            stroke: #fff;
+            stroke-miterlimit: 10;
+            margin: auto;
+            box-shadow: inset 0px 0px 0px #4CAF50;
+            animation: fill .4s ease-in-out .4s forwards, scale .3s ease-in-out .9s both;
+        }
+        .checkmark__circle {
+            stroke-dasharray: 166;
+            stroke-dashoffset: 166;
+            stroke-width: 4;
+            stroke-miterlimit: 10;
+            stroke: #4CAF50;
+            fill: none;
+            animation: stroke 0.6s cubic-bezier(0.65, 0, 0.45, 1) forwards;
+        }
+        .checkmark__check {
+            transform-origin: 50% 50%;
+            stroke-dasharray: 48;
+            stroke-dashoffset: 48;
+            animation: stroke 0.3s cubic-bezier(0.65, 0, 0.45, 1) 0.8s forwards;
+        }
+        @keyframes stroke {
+            100% {
+                stroke-dashoffset: 0;
+            }
+        }
+        @keyframes scale {
+            0%, 100% {
+                transform: none;
+            }
+            50% {
+                transform: scale3d(1.1, 1.1, 1);
+            }
+        }
+        @keyframes fill {
+            100% {
+                box-shadow: inset 0px 0px 0px 60px #4CAF50;
+            }
+        }
+    </style>
+</head>
+<body class="text-gray-800 overflow-x-hidden">
+
+    <div id="app-container" class="relative min-h-screen">
+        <!-- Header -->
+        <header class="p-4 flex justify-between items-center text-white sticky top-0 bg-[#3d235a]/80 backdrop-blur-sm z-20">
+            <button id="menu-btn" class="text-2xl w-10 h-10 flex items-center justify-center rounded-full hover:bg-white/10 transition-colors">
+                <i class="fas fa-bars"></i>
+            </button>
+            <h1 class="text-xl font-bold tracking-wider uppercase">Phone Packages</h1>
+            <button id="cart-btn" class="text-2xl w-10 h-10 flex items-center justify-center rounded-full hover:bg-white/10 transition-colors relative">
+                <i class="fas fa-shopping-cart"></i>
+                <span id="cart-count" class="absolute -top-2 -right-3 bg-pink-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center hidden">0</span>
+            </button>
+        </header>
+
+        <!-- Main Content -->
+        <main class="p-4">
+            <div id="product-grid" class="grid grid-cols-2 gap-3 sm:gap-4">
+                <!-- Products will be injected here by JavaScript -->
+            </div>
+        </main>
+
+        <!-- Cart Sidebar -->
+        <div id="cart-sidebar" class="cart-slide fixed top-0 right-0 h-full w-full sm:max-w-sm bg-[#F3E8FF] shadow-lg transform translate-x-full z-40 flex flex-col">
+            <div class="flex justify-between items-center p-4 border-b border-purple-200">
+                <h2 class="text-xl font-bold">Cart</h2>
+                <button id="close-cart-btn" class="text-2xl p-2 -mr-2">&times;</button>
+            </div>
+            <div id="cart-items" class="flex-grow p-4 overflow-y-auto space-y-4">
+                <!-- Cart items will be injected here -->
+                <p id="empty-cart-msg" class="text-gray-500">Your cart is empty.</p>
+            </div>
+            <div class="p-4 border-t border-purple-200">
+                <button id="finalize-btn" class="w-full main-gradient text-white font-bold py-3 rounded-xl shadow-lg">
+                    GET PHONES
+                </button>
+            </div>
+        </div>
+        
+        <!-- Sidebar Overlay -->
+        <div id="sidebar-overlay" class="fixed inset-0 bg-black/50 z-30 hidden"></div>
+
+        <!-- Add to Cart Modal -->
+        <div id="add-to-cart-modal" class="modal-container fixed inset-0 bg-black/30 flex items-center justify-center z-50 hidden opacity-0 p-4">
+            <div class="bg-white rounded-2xl p-8 modal-content w-full max-w-xs">
+                <div id="modal-content-inner">
+                    <!-- Spinner or Checkmark SVG will be here -->
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+             const newProductsData = [
+                {
+                    title: "Apple iPhone 15 128GB Black",
+                    desc: "128GB Black (MTP03)",
+                    img: "https://appleroom.ua/wa-data/public/shop/products/07/61/16107/images/31241/31241.219.png"
+                },
+                {
+                    title: "Apple iPhone 16 Pro Max 256GB Natural Titanium",
+                    desc: "256GB Natural Titanium (MYWY3)",
+                    img: "https://appleroom.ua/wa-data/public/shop/products/68/85/18568/images/42194/42194.219.png"
+                },
+                {
+                    title: "Apple iPhone 16 Pro Max 256GB Desert Titanium",
+                    desc: "256GB Desert Titanium (MYWX3)",
+                    img: "https://appleroom.ua/wa-data/public/shop/products/67/85/18567/images/42191/42191.219.png"
+                },
+                {
+                    title: "Apple iPhone 16 Pro Max 256GB Black Titanium",
+                    desc: "256GB Black Titanium (MYWV3)",
+                    img: "https://appleroom.ua/wa-data/public/shop/products/66/85/18566/images/42200/42200.219.png"
+                },
+                {
+                    title: "Apple iPhone 13 128GB Starlight",
+                    desc: "128GB Starlight (MLPG3)",
+                    img: "https://appleroom.ua/wa-data/public/shop/products/17/24/12417/images/27224/27224.219.png"
+                },
+                {
+                    title: "Apple iPhone 13 128GB Midnight",
+                    desc: "128GB Midnight (MLPF3)",
+                    img: "https://appleroom.ua/wa-data/public/shop/products/16/24/12416/images/27223/27223.219.png"
+                },
+                {
+                    title: "Apple iPhone 16 Pro 256GB Desert Titanium",
+                    desc: "256GB Desert Titanium (MYNK3)",
+                    img: "https://appleroom.ua/wa-data/public/shop/products/79/85/18579/images/42204/42204.219.png"
+                },
+                {
+                    title: "Apple iPhone 16 Pro 256GB Black Titanium",
+                    desc: "256GB Black Titanium (MYNH3)",
+                    img: "https://appleroom.ua/wa-data/public/shop/products/78/85/18578/images/42203/42203.219.png"
+                },
+                 {
+                    title: "Apple iPhone 16 Pro 128GB Black Titanium",
+                    desc: "128GB Black Titanium (MYND3)",
+                    img: "https://appleroom.ua/wa-data/public/shop/products/90/85/18590/images/42215/42215.219.png"
+                },
+                {
+                    title: "Apple iPhone 16 Pro Max 256GB White Titanium",
+                    desc: "256GB White Titanium (MYWW3)",
+                    img: "https://appleroom.ua/wa-data/public/shop/products/69/85/18569/images/42197/42197.219.png"
+                },
+                {
+                    title: "Apple iPhone 16 128GB Black",
+                    desc: "128GB Black (MYE73)",
+                    img: "https://appleroom.ua/wa-data/public/shop/products/20/86/18620/images/42248/42248.219.png"
+                },
+                {
+                    title: "Apple iPhone 15 128GB Pink",
+                    desc: "128GB Pink (MTP13)",
+                    img: "https://appleroom.ua/wa-data/public/shop/products/98/60/16098/images/31235/31235.219.png"
+                }
+            ];
+            
+            const products = newProductsData.map((phone, index) => ({
+                id: index + 1,
+                name: phone.title,
+                description: phone.desc,
+                imageUrl: phone.img
+            }));
+
+
+            let cart = [];
+
+            const productGrid = document.getElementById('product-grid');
+            const cartBtn = document.getElementById('cart-btn');
+            const closeCartBtn = document.getElementById('close-cart-btn');
+            const cartSidebar = document.getElementById('cart-sidebar');
+            const sidebarOverlay = document.getElementById('sidebar-overlay');
+            const cartItemsContainer = document.getElementById('cart-items');
+            const cartCount = document.getElementById('cart-count');
+            const emptyCartMsg = document.getElementById('empty-cart-msg');
+            const addToCartModal = document.getElementById('add-to-cart-modal');
+            const modalContentInner = document.getElementById('modal-content-inner');
+            const finalizeBtn = document.getElementById('finalize-btn');
+
+            let isOrderConfirmed = false;
+
+            // --- Render Functions ---
+            function renderProducts() {
+                productGrid.innerHTML = products.map(product => {
+                    const isInCart = cart.some(item => item.id === product.id);
+                    const inCartClass = isInCart ? 'is-in-cart' : '';
+                    const buttonText = isInCart ? 'Claimed' : 'Claim';
+                    return `
+                    <div class="product-card">
+                        <div class="product-card-inner bg-[#F3E8FF] rounded-2xl p-3 sm:p-4 flex flex-col text-center shadow-md">
+                            <div class="flex-grow w-full flex items-center justify-center min-h-0 py-2">
+                                <img loading="lazy" src="${product.imageUrl}" alt="${product.name}" class="max-w-full max-h-full object-contain" onerror="this.src='https://placehold.co/200x200/cccccc/333?text=Image+Error'">
+                            </div>
+                            <div class="w-full flex-shrink-0 mt-auto pt-2">
+                                <h3 class="font-bold text-sm leading-tight">${product.name}</h3>
+                                <p class="text-xs text-gray-500 mb-2">${product.description}</p>
+                                <button class="add-to-cart-btn w-full main-gradient text-white font-semibold py-2.5 rounded-xl text-sm flex items-center justify-center gap-2 ${inCartClass}" data-id="${product.id}">
+                                    <span class="button-text">${buttonText}</span>
+                                    <i class="fas fa-check ${isInCart ? '' : 'hidden'}"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `}).join('');
+                addEventListenersToButtons();
+            }
+
+            function renderCart() {
+                if (cart.length === 0) {
+                    cartItemsContainer.innerHTML = '';
+                    emptyCartMsg.classList.remove('hidden');
+                } else {
+                    emptyCartMsg.classList.add('hidden');
+                    cartItemsContainer.innerHTML = cart.map(item => `
+                        <div class="flex items-center justify-between cart-item-anim">
+                            <div class="flex items-center gap-3 min-w-0">
+                                <img src="${item.imageUrl}" alt="${item.name}" class="w-12 h-12 rounded-lg object-cover bg-white flex-shrink-0">
+                                <span class="font-semibold truncate">${item.name}</span>
+                            </div>
+                            <button class="remove-from-cart-btn text-pink-500 hover:text-pink-700 p-2 -mr-2 rounded-full flex-shrink-0" data-id="${item.id}">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
+                        </div>
+                    `).join('');
+                }
+                updateCartCount();
+                addEventListenersToCartButtons();
+            }
+            
+            function updateCartCount() {
+                const totalItems = cart.length;
+                if (totalItems > 0) {
+                    cartCount.textContent = totalItems;
+                    cartCount.classList.remove('hidden');
+                } else {
+                    cartCount.classList.add('hidden');
+                }
+            }
+
+            // --- Event Handlers ---
+            function handleAddToCart(productId, buttonElement) {
+                const productToAdd = products.find(p => p.id === productId);
+                const isInCart = cart.some(item => item.id === productId);
+
+                if (productToAdd && !isInCart) {
+                    cart.push(productToAdd);
+                    updateButtonState(buttonElement, true);
+                } else if (productToAdd) {
+                    cart = cart.filter(item => item.id !== productId);
+                    updateButtonState(buttonElement, false);
+                }
+                renderCart();
+            }
+            
+            function handleRemoveFromCart(productId) {
+                cart = cart.filter(item => item.id !== productId);
+                const buttonOnGrid = document.querySelector(`.add-to-cart-btn[data-id="${productId}"]`);
+                if (buttonOnGrid) {
+                    updateButtonState(buttonOnGrid, false);
+                }
+                renderCart();
+            }
+
+            function updateButtonState(button, isInCart) {
+                const checkmark = button.querySelector('i.fa-check');
+                const buttonText = button.querySelector('.button-text');
+                button.classList.toggle('is-in-cart', isInCart);
+                if (buttonText) {
+                    buttonText.textContent = isInCart ? 'Claimed' : 'Claim';
+                }
+                if (checkmark) {
+                    checkmark.classList.toggle('hidden', !isInCart);
+                }
+            }
+
+            function showFinalizingAnimation() {
+                isOrderConfirmed = false;
+                modalContentInner.innerHTML = `
+                    <svg class="animate-spin h-10 w-10 text-purple-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>`;
+                addToCartModal.classList.remove('hidden');
+                setTimeout(() => addToCartModal.classList.remove('opacity-0'), 10);
+
+                setTimeout(() => {
+                    modalContentInner.innerHTML = `
+                        <div class="text-center">
+                            <div class="checkmark-container">
+                                <svg class="checkmark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52">
+                                    <circle class="checkmark__circle" cx="26" cy="26" r="25" fill="none"/>
+                                    <path class="checkmark__check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8"/>
+                                </svg>
+                            </div>
+                            <p class="mt-4 text-xl font-bold text-gray-800 tracking-wider">ORDER CONFIRMED</p>
+                        </div>
+                    `;
+                    isOrderConfirmed = true;
+                }, 2500);
+            }
+
+            function closeModalAndReset() {
+                addToCartModal.classList.add('opacity-0');
+                setTimeout(() => {
+                    addToCartModal.classList.add('hidden');
+                    
+                    // Clear cart and reset UI
+                    cart = [];
+                    if (cartSidebar.classList.contains('translate-x-full') === false) {
+                        toggleCart();
+                    }
+                    renderCart();
+                    renderProducts();
+                    animateProductCards();
+                }, 300);
+            }
+
+            function toggleCart() {
+                cartSidebar.classList.toggle('translate-x-full');
+                sidebarOverlay.classList.toggle('hidden');
+            }
+
+            // --- Event Listeners Setup ---
+            function addEventListenersToButtons() {
+                document.querySelectorAll('.add-to-cart-btn').forEach(button => {
+                    button.addEventListener('click', (e) => {
+                        const buttonElement = e.currentTarget;
+                        const productId = parseInt(buttonElement.dataset.id);
+                        handleAddToCart(productId, buttonElement);
+                    });
+                });
+            }
+            
+            function addEventListenersToCartButtons() {
+                 document.querySelectorAll('.remove-from-cart-btn').forEach(button => {
+                    button.addEventListener('click', (e) => {
+                        const productId = parseInt(e.currentTarget.dataset.id);
+                        handleRemoveFromCart(productId);
+                    });
+                });
+            }
+
+            cartBtn.addEventListener('click', toggleCart);
+            closeCartBtn.addEventListener('click', toggleCart);
+            sidebarOverlay.addEventListener('click', toggleCart);
+            
+            finalizeBtn.addEventListener('click', () => {
+                if (cart.length > 0) {
+                    showFinalizingAnimation();
+                }
+            });
+
+            addToCartModal.addEventListener('click', () => {
+                if (isOrderConfirmed) {
+                    closeModalAndReset();
+                }
+            });
+
+            document.getElementById('menu-btn').addEventListener('click', () => {
+                const menuModal = document.createElement('div');
+                menuModal.className = 'modal-container fixed inset-0 bg-black/50 z-50 flex items-center justify-center opacity-0';
+                menuModal.innerHTML = `
+                    <div class="bg-white rounded-lg p-6 text-center modal-content">
+                        <p class="mb-4">Menu navigation would appear here!</p>
+                        <button class="bg-purple-600 text-white px-4 py-2 rounded-lg">Close</button>
+                    </div>
+                `;
+                document.body.appendChild(menuModal);
+                setTimeout(() => menuModal.classList.remove('opacity-0'), 10);
+                
+                menuModal.querySelector('button').onclick = () => {
+                    menuModal.classList.add('opacity-0');
+                    setTimeout(() => menuModal.remove(), 300);
+                };
+            });
+            
+            function animateProductCards() {
+                const cards = document.querySelectorAll('.product-card');
+                cards.forEach((card, index) => {
+                    setTimeout(() => {
+                        card.classList.add('show');
+                    }, index * 100);
+                });
+            }
+
+            // --- Initial Load ---
+            renderProducts();
+            renderCart();
+            animateProductCards();
+        });
+    </script>
+</body>
+</html>
+
