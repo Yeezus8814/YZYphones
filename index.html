@@ -160,6 +160,23 @@
                 box-shadow: inset 0px 0px 0px 60px #4CAF50;
             }
         }
+
+        /* New styles for text truncation and layout stability */
+        .product-title {
+            height: 2.5rem; /* Reserve space for 2 lines */
+            line-height: 1.25rem;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;  
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .product-desc {
+            height: 1.25rem; /* Reserve space for 1 line */
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
     </style>
 </head>
 <body class="text-gray-800 overflow-x-hidden">
@@ -207,7 +224,7 @@
         <!-- Add to Cart Modal -->
         <div id="add-to-cart-modal" class="modal-container fixed inset-0 bg-black/30 flex items-center justify-center z-50 hidden opacity-0 p-4">
             <div class="bg-white rounded-2xl p-8 modal-content w-full max-w-xs">
-                <div id="modal-content-inner">
+                <div id="modal-content-inner" class="flex justify-center items-center">
                     <!-- Spinner or Checkmark SVG will be here -->
                 </div>
             </div>
@@ -313,13 +330,13 @@
                     return `
                     <div class="product-card flex">
                         <div class="product-card-inner bg-[#F3E8FF] rounded-2xl p-3 sm:p-4 flex flex-col text-center shadow-md">
-                            <div class="h-[65%] w-full flex items-center justify-center min-h-0 py-2">
+                            <div class="flex-grow w-full flex items-center justify-center min-h-0 py-2">
                                 <img loading="lazy" src="${product.imageUrl}" alt="${product.name}" class="max-w-full max-h-full object-contain" onerror="this.src='https://placehold.co/200x200/cccccc/333?text=Image+Error'">
                             </div>
-                            <div class="h-[35%] w-full flex flex-col justify-start items-center flex-shrink-0 pt-2">
-                                <h3 class="font-bold text-sm leading-tight">${product.name}</h3>
-                                <p class="text-xs text-gray-500 mb-2">${product.description}</p>
-                                <button class="add-to-cart-btn w-full mt-auto main-gradient text-white font-semibold py-2.5 rounded-xl text-sm flex items-center justify-center gap-2 ${inCartClass}" data-id="${product.id}">
+                            <div class="w-full flex-shrink-0 mt-auto pt-2">
+                                <h3 class="font-bold text-sm product-title flex items-center justify-center">${product.name}</h3>
+                                <p class="text-xs text-gray-500 mb-2 product-desc">${product.description}</p>
+                                <button class="add-to-cart-btn w-full main-gradient text-white font-semibold py-2.5 rounded-xl text-sm flex items-center justify-center gap-2 ${inCartClass}" data-id="${product.id}">
                                     <span class="button-text">${buttonText}</span>
                                     <i class="fas fa-check ${isInCart ? '' : 'hidden'}"></i>
                                 </button>
@@ -401,12 +418,10 @@
             function showFinalizingAnimation() {
                 isOrderConfirmed = false;
                 modalContentInner.innerHTML = `
-                    <div class="flex justify-center items-center">
-                        <svg class="animate-spin h-10 w-10 text-purple-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
-                    </div>`;
+                    <svg class="animate-spin h-10 w-10 text-purple-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>`;
                 addToCartModal.classList.remove('hidden');
                 setTimeout(() => addToCartModal.classList.remove('opacity-0'), 10);
 
@@ -518,5 +533,3 @@
     </script>
 </body>
 </html>
-
-
